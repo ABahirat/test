@@ -3,6 +3,15 @@ Changes: vars --> let, for better scoping
 
 */
 
+/**
+Notes: 
+Async function: 'makes promises friendly', returns promises, contains awaits 
+Promises: Represents failure/success of async operation
+  -Three states: Reject, Fulfilled, Pending
+
+
+**/
+
 function getJIRAFeed(callback, errorCallback){
     /* var is global variable, change to let */
     let user = document.getElementById("user").value;
@@ -20,15 +29,20 @@ function getJIRAFeed(callback, errorCallback){
  *   formatted for rendering.
  * @param {function(string)} errorCallback - Called when the query or call fails.
  */
-async function getQueryResults(s, callback, errorCallback) {                                                 
+ /** Inconsistent variable naming with documentaiton **/
+async function getQueryResults(searchTerm, callback, errorCallback) {                                                 
     try {
-      let response = await make_request(s, "json");
+      let response = await make_request(searchTerm, "json");
       callback(createHTMLElementResult(response));
     } catch (error) {
       errorCallback(error);
     }
 }
 
+/**
+* @param {string} url - URL for JIRA Project
+* @param {string} responseType - response type for API (json)
+*/
 function make_request(url, responseType) {
   return new Promise(function(resolve, reject) {
     let req = new XMLHttpRequest();
@@ -47,19 +61,16 @@ function make_request(url, responseType) {
     // Handle network errors
     req.onerror = function() {
       reject(Error("Network Error"));
-    }
-    req.onreadystatechange = function() { 
+    };
+    req.onreadystatechange = function() {
       if(req.readyState == 4 && req.status == 401) { 
           reject("You must be logged in to JIRA to see this project.");
       }
-    }
-
+    };
     // Make the request
     req.send();
   });
 }
-
-
 
 function loadOptions(){
   chrome.storage.sync.get({
@@ -70,12 +81,14 @@ function loadOptions(){
     document.getElementById('user').value = items.user;
   });
 }
+
 function buildJQL(callback) {
   let callbackBase = "https://jira.secondlife.com/rest/api/2/search?jql=";
   let project = document.getElementById("project").value;
   let status = document.getElementById("statusSelect").value;
-  let inStatusFor = document.getElementById("daysPast").value
+  let inStatusFor = document.getElementById("daysPast").value;
   let fullCallbackUrl = callbackBase;
+  /*could change adding variables in string for consistency*/
   fullCallbackUrl += `project=${project}+and+status=${status}+and+status+changed+to+${status}+before+-${inStatusFor}d&fields=id,status,key,assignee,summary&maxresults=100`;
   callback(fullCallbackUrl);
 }
@@ -85,19 +98,24 @@ function createHTMLElementResult(response){
 // Create HTML output to display the search results.
 // results.json in the "json_results" folder contains a sample of the API response
 // hint: you may run the application as well if you fix the bug. 
-// 
+//
 
-  return '<p>There may be results, but you must read the response and display them.</p>';
-  
+    let test = document.getElementById("query-result");
+    test.hidden = false;
+    for (let index = 0; index < response['issues'].length; index++){
+        test.innerHTML += response['issues'][index]['key'] + " - " + response['issues'][index]['fields']['summary'] + "<br>";
+    }
+    return test.innerHTML
 }
 
-// utility 
+// utility
 function domify(str){
   let dom = (new DOMParser()).parseFromString('<!doctype html><body>' + str,'text/html');
   return dom.body.textContent;
 }
 
-/** change to async function since make_request will return a promise */
+/** change to async function since make_request will return a promise, check project exists also needs to return a promise
+and therefore needs to be an async function because we need to wait for make request to return with it's promise */
 async function checkProjectExists(){
     try {
       return await make_request("https://jira.secondlife.com/rest/api/2/project/SUN", "json");
@@ -135,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
               document.getElementById('status').hidden = false;
           });
         });
-      }
+      };
 
       // activity feed click handler
       document.getElementById("feed").onclick = function(){   
