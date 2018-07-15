@@ -1,8 +1,14 @@
+/**
+Changes: vars --> let, for better scoping 
+
+*/
+
 function getJIRAFeed(callback, errorCallback){
-    var user = document.getElementById("user").value;
+    /* var is global variable, change to let */
+    let user = document.getElementById("user").value;
     if(user == undefined) return;
     
-    var url = "https://jira.secondlife.com/activity?maxResults=50&streams=user+IS+"+user+"&providers=issues";
+    let url = "https://jira.secondlife.com/activity?maxResults=50&streams=user+IS+"+user+"&providers=issues";
     make_request(url, "").then(function(response) {
       // empty response type allows the request.responseXML property to be returned in the makeRequest call
       callback(url, response);
@@ -16,7 +22,7 @@ function getJIRAFeed(callback, errorCallback){
  */
 async function getQueryResults(s, callback, errorCallback) {                                                 
     try {
-      var response = await make_request(s, "json");
+      let response = await make_request(s, "json");
       callback(createHTMLElementResult(response));
     } catch (error) {
       errorCallback(error);
@@ -25,12 +31,12 @@ async function getQueryResults(s, callback, errorCallback) {
 
 function make_request(url, responseType) {
   return new Promise(function(resolve, reject) {
-    var req = new XMLHttpRequest();
+    let req = new XMLHttpRequest();
     req.open('GET', url);
     req.responseType = responseType;
 
     req.onload = function() {
-      var response = responseType ? req.response : req.responseXML;
+      let response = responseType ? req.response : req.responseXML;
       if(response && response.errorMessages && response.errorMessages.length > 0){
         reject(response.errorMessages[0]);
         return;
@@ -65,11 +71,11 @@ function loadOptions(){
   });
 }
 function buildJQL(callback) {
-  var callbackBase = "https://jira.secondlife.com/rest/api/2/search?jql=";
-  var project = document.getElementById("project").value;
-  var status = document.getElementById("statusSelect").value;
-  var inStatusFor = document.getElementById("daysPast").value
-  var fullCallbackUrl = callbackBase;
+  let callbackBase = "https://jira.secondlife.com/rest/api/2/search?jql=";
+  let project = document.getElementById("project").value;
+  let status = document.getElementById("statusSelect").value;
+  let inStatusFor = document.getElementById("daysPast").value
+  let fullCallbackUrl = callbackBase;
   fullCallbackUrl += `project=${project}+and+status=${status}+and+status+changed+to+${status}+before+-${inStatusFor}d&fields=id,status,key,assignee,summary&maxresults=100`;
   callback(fullCallbackUrl);
 }
@@ -87,11 +93,12 @@ function createHTMLElementResult(response){
 
 // utility 
 function domify(str){
-  var dom = (new DOMParser()).parseFromString('<!doctype html><body>' + str,'text/html');
+  let dom = (new DOMParser()).parseFromString('<!doctype html><body>' + str,'text/html');
   return dom.body.textContent;
 }
 
-function checkProjectExists(){
+/** change to async function since make_request will return a promise */
+async function checkProjectExists(){
     try {
       return await make_request("https://jira.secondlife.com/rest/api/2/project/SUN", "json");
     } catch (errorMessage) {
@@ -119,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('status').innerHTML = 'Query term: ' + url + '\n';
             document.getElementById('status').hidden = false;
             
-            var jsonResultDiv = document.getElementById('query-result');
+            let jsonResultDiv = document.getElementById('query-result');
             jsonResultDiv.innerHTML = return_val;
             jsonResultDiv.hidden = false;
 
@@ -138,19 +145,19 @@ document.addEventListener('DOMContentLoaded', function() {
           document.getElementById('status').hidden = false;
 
           // render result
-          var feed = xmlDoc.getElementsByTagName('feed');
-          var entries = feed[0].getElementsByTagName("entry");
-          var list = document.createElement('ul');
+          let feed = xmlDoc.getElementsByTagName('feed');
+          let entries = feed[0].getElementsByTagName("entry");
+          let list = document.createElement('ul');
 
-          for (var index = 0; index < entries.length; index++) {
-            var html = entries[index].getElementsByTagName("title")[0].innerHTML;
-            var updated = entries[index].getElementsByTagName("updated")[0].innerHTML;
-            var item = document.createElement('li');
+          for (let index = 0; index < entries.length; index++) {
+            let html = entries[index].getElementsByTagName("title")[0].innerHTML;
+            let updated = entries[index].getElementsByTagName("updated")[0].innerHTML;
+            let item = document.createElement('li');
             item.innerHTML = new Date(updated).toLocaleString() + " - " + domify(html);
             list.appendChild(item);
           }
 
-          var feedResultDiv = document.getElementById('query-result');
+          let feedResultDiv = document.getElementById('query-result');
           if(list.childNodes.length > 0){
             feedResultDiv.innerHTML = list.outerHTML;
           } else {
