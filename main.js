@@ -30,7 +30,7 @@ function getJIRAFeed(callback, errorCallback){
  *   formatted for rendering.
  * @param {function(string)} errorCallback - Called when the query or call fails.
  */
- /** Inconsistent variable naming with documentaiton **/
+ /** Inconsistent variable naming with documentation **/
 async function getQueryResults(searchTerm, callback, errorCallback) {                                                 
     try {
       let response = await makeRequest(searchTerm, "json");
@@ -117,7 +117,8 @@ function createHTMLElementResult(response){
     let list = document.createElement('ul');
     for (let index = 0; index < response['issues'].length; index++){
         let item = document.createElement('li');
-        item.innerHTML = response['issues'][index]['key'] + " - " + response['issues'][index]['fields']['summary'];
+        let issue = response['issues'][index];
+        item.innerHTML = `<a href=${issue["self"]}>${issue["key"]}</a> - ${issue["fields"]["summary"]}`;
         list.appendChild(item)
     }
 
@@ -126,6 +127,7 @@ function createHTMLElementResult(response){
     }else {
         document.getElementById('status').innerHTML = 'There are no activity results.';
         document.getElementById('status').hidden = false;
+        return document.getElementById('status').innerHTML
     }
 
     return jsonResultDiv.innerHTML
@@ -133,7 +135,7 @@ function createHTMLElementResult(response){
 
 // utility
 /**
- * @param str - string to domify
+ * @param str - string to DOMify
  */
 function domify(str){
   let dom = (new DOMParser()).parseFromString('<!doctype html><body>' + str,'text/html');
@@ -165,13 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
           document.getElementById('status').innerHTML = 'Performing JIRA search for ' + url;
           document.getElementById('status').hidden = false;  
           // perform the search
-          getQueryResults(url, function(return_val) {
+          getQueryResults(url, function(returnVal) {
             // render the results
             document.getElementById('status').innerHTML = 'Query term: ' + url + '\n';
             document.getElementById('status').hidden = false;
             
             let jsonResultDiv = document.getElementById('query-result');
-            jsonResultDiv.innerHTML = return_val;
+            jsonResultDiv.innerHTML = returnVal;
             jsonResultDiv.hidden = false;
 
           }, function(errorMessage) {
