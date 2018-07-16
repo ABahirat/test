@@ -1,15 +1,15 @@
 /**
-Changes: vars --> let, for better scoping 
-
+Changes:
+ vars --> let, for better scoping
+ Changed function to async function to make await valid
+ Variable name changes for consistency
 */
 
 /**
-Notes: 
-Async function: 'makes promises friendly', returns promises, contains awaits 
-Promises: Represents failure/success of async operation
-  -Three states: Reject, Fulfilled, Pending
-
-
+ * Notes:
+ * Async function: 'makes promises friendly', returns promises, contains awaits
+ * Promises: Represents failure/success of async operation - Three states: Reject, Fulfilled, Pending
+ * Awaits: Causes async function to pause until a promise is resolved
 **/
 
 function getJIRAFeed(callback, errorCallback){
@@ -17,8 +17,9 @@ function getJIRAFeed(callback, errorCallback){
     let user = document.getElementById("user").value;
     if(user == undefined) return;
     
-    let url = "https://jira.secondlife.com/activity?maxResults=50&streams=user+IS+"+user+"&providers=issues";
-    make_request(url, "").then(function(response) {
+    // Changed this for consistency with URL below
+    let url = `https://jira.secondlife.com/activity?maxResults=50&streams=user+IS+${user}&providers=issues`;
+    makeRequest(url, "").then(function(response) {
       // empty response type allows the request.responseXML property to be returned in the makeRequest call
       callback(url, response);
     }, errorCallback);
@@ -32,7 +33,7 @@ function getJIRAFeed(callback, errorCallback){
  /** Inconsistent variable naming with documentaiton **/
 async function getQueryResults(searchTerm, callback, errorCallback) {                                                 
     try {
-      let response = await make_request(searchTerm, "json");
+      let response = await makeRequest(searchTerm, "json");
       callback(createHTMLElementResult(response));
     } catch (error) {
       errorCallback(error);
@@ -40,10 +41,10 @@ async function getQueryResults(searchTerm, callback, errorCallback) {
 }
 
 /**
-* @param {string} url - URL for JIRA Project
-* @param {string} responseType - response type for API (json)
-*/
-function make_request(url, responseType) {
+  * @param {string} url - URL for JIRA Project
+  * @param {string} responseType - response type for API (json)
+  */
+function makeRequest(url, responseType) {
   return new Promise(function(resolve, reject) {
     let req = new XMLHttpRequest();
     req.open('GET', url);
@@ -81,17 +82,22 @@ function loadOptions(){
     document.getElementById('user').value = items.user;
   });
 }
-
+/**
+ * @param {function(string)} callback - Called at end of function once URL is generated
+ */
 function buildJQL(callback) {
   let callbackBase = "https://jira.secondlife.com/rest/api/2/search?jql=";
   let project = document.getElementById("project").value;
   let status = document.getElementById("statusSelect").value;
   let inStatusFor = document.getElementById("daysPast").value;
   let fullCallbackUrl = callbackBase;
-  /*could change adding variables in string for consistency*/
   fullCallbackUrl += `project=${project}+and+status=${status}+and+status+changed+to+${status}+before+-${inStatusFor}d&fields=id,status,key,assignee,summary&maxresults=100`;
   callback(fullCallbackUrl);
 }
+
+/**
+ * @param response - response from API as javascript object
+ */
 function createHTMLElementResult(response){
 
 // 
@@ -100,25 +106,45 @@ function createHTMLElementResult(response){
 // hint: you may run the application as well if you fix the bug. 
 //
 
-    let test = document.getElementById("query-result");
-    test.hidden = false;
-    for (let index = 0; index < response['issues'].length; index++){
-        test.innerHTML += response['issues'][index]['key'] + " - " + response['issues'][index]['fields']['summary'] + "<br>";
+    let jsonResultDiv = document.getElementById("query-result");
+    jsonResultDiv.hidden = false;
+    // clears query result div if there are any results showing
+    while (jsonResultDiv.hasChildNodes()) {
+        jsonResultDiv.removeChild(jsonResultDiv.firstChild);
     }
-    return test.innerHTML
+
+    // Code moved over from on click functionality below
+    let list = document.createElement('ul');
+    for (let index = 0; index < response['issues'].length; index++){
+        let item = document.createElement('li');
+        item.innerHTML = response['issues'][index]['key'] + " - " + response['issues'][index]['fields']['summary'];
+        list.appendChild(item)
+    }
+
+    if(list.childNodes.length > 0) {
+        jsonResultDiv.innerHTML = list.outerHTML;
+    }else {
+        document.getElementById('status').innerHTML = 'There are no activity results.';
+        document.getElementById('status').hidden = false;
+    }
+
+    return jsonResultDiv.innerHTML
 }
 
 // utility
+/**
+ * @param str - string to domify
+ */
 function domify(str){
   let dom = (new DOMParser()).parseFromString('<!doctype html><body>' + str,'text/html');
   return dom.body.textContent;
 }
 
-/** change to async function since make_request will return a promise, check project exists also needs to return a promise
-and therefore needs to be an async function because we need to wait for make request to return with it's promise */
+/** change to async function since makeRequest will return a promise, check project exists also needs to return a promise
+and therefore needs to be an async function because we need to wait for makeRequest to return with it's promise */
 async function checkProjectExists(){
     try {
-      return await make_request("https://jira.secondlife.com/rest/api/2/project/SUN", "json");
+      return await makeRequest("https://jira.secondlife.com/rest/api/2/project/SUN", "json");
     } catch (errorMessage) {
       document.getElementById('status').innerHTML = 'ERROR. ' + errorMessage;
       document.getElementById('status').hidden = false;
