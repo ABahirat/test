@@ -108,10 +108,6 @@ function createHTMLElementResult(response){
 
     let jsonResultDiv = document.getElementById("query-result");
     jsonResultDiv.hidden = false;
-    // clears query result div if there are any results showing
-    while (jsonResultDiv.hasChildNodes()) {
-        jsonResultDiv.removeChild(jsonResultDiv.firstChild);
-    }
 
     // Code moved over from on click functionality below
     let list = document.createElement('ul');
